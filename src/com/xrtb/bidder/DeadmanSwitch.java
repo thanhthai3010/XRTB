@@ -19,107 +19,107 @@ import org.slf4j.LoggerFactory;
  */
 public class DeadmanSwitch implements Runnable {
 
-	/** The shared database object */
-	RedissonClient redisson;
-	/** My thread */
-	Thread me;
+    /** The shared database object */
+    RedissonClient redisson;
+    /** My thread */
+    Thread me;
 
-	/* The key we are looking for */
-	String key;
+    /* The key we are looking for */
+    String key;
 
-	/** Was a stop sent? */
-	boolean sentStop = false;
+    /** Was a stop sent? */
+    boolean sentStop = false;
 
-	/** Are we in testmode */
-	public static boolean testmode = false;
+    /** Are we in testmode */
+    public static boolean testmode = false;
 
-	/** The logging object */
-	static final Logger logger = LoggerFactory.getLogger(DeadmanSwitch.class);
+    /** The logging object */
+    static final Logger logger = LoggerFactory.getLogger(DeadmanSwitch.class);
 
-	public DeadmanSwitch(RedissonClient redisson, String key) {
-		this.redisson = redisson;
-		this.key = key;
-		me = new Thread(this);
-		me.start();
-	}
+    public DeadmanSwitch(RedissonClient redisson, String key) {
+	this.redisson = redisson;
+	this.key = key;
+	me = new Thread(this);
+	me.start();
+    }
 
-	public DeadmanSwitch(String host, int port, String key) {
-		AerospikeHandler spike = AerospikeHandler.getInstance(host, port, 300);
-		redisson = new RedissonClient(spike);
+    public DeadmanSwitch(String host, int port, String key) {
+	AerospikeHandler spike = AerospikeHandler.getInstance(host, port, 300);
+	redisson = new RedissonClient(spike);
 
-		this.key = key;
-		me = new Thread(this);
-		me.start();
-	}
+	this.key = key;
+	me = new Thread(this);
+	me.start();
+    }
 
-	public DeadmanSwitch() {
+    public DeadmanSwitch() {
 
-	}
+    }
 
-	@Override
-	public void run() {
-		while (true) {
+    @Override
+    public void run() {
+	while (true) {
+	    try {
+		if (canRun() == false) {
+		    if (sentStop == false) {
 			try {
-				if (canRun() == false) {
-					if (sentStop == false) {
-						try {
-							if (!testmode) {
-								logger.warn("DeadmanSwitch, Switch error: {} does not exist, no bidding allowed!",key);
-								StopBidder cmd = new StopBidder();
-								cmd.from = Configuration.getInstance().instanceName;
-								Controller.getInstance().stopBidder(cmd);
-							} else {
-								System.out.println("Deadman Switch is thrown");
-							}
-						} catch (Exception e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-					sentStop = true;
-				} else {
-					if (sentStop) {
-						sentStop = false;
-						if (RTBServer.stopped) {
-							RTBServer.stopped = false;
-							StartBidder cmd = new StartBidder();
-							cmd.from = Configuration.getInstance().instanceName;
-							try {
-								Controller.getInstance().startBidder(cmd);
-							} catch (Exception e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-						}
-					}
-				}
-				Thread.sleep(60000);
-			} catch (InterruptedException e) {
+			    if (!testmode) {
+				logger.warn("DeadmanSwitch, Switch error: {} does not exist, no bidding allowed!", key);
+				StopBidder cmd = new StopBidder();
+				cmd.from = Configuration.getInstance().instanceName;
+				Controller.getInstance().stopBidder(cmd);
+			    } else {
+				System.out.println("Deadman Switch is thrown");
+			    }
+			} catch (Exception e) {
+			    // TODO Auto-generated catch block
+			    e.printStackTrace();
+			}
+		    }
+		    sentStop = true;
+		} else {
+		    if (sentStop) {
+			sentStop = false;
+			if (RTBServer.stopped) {
+			    RTBServer.stopped = false;
+			    StartBidder cmd = new StartBidder();
+			    cmd.from = Configuration.getInstance().instanceName;
+			    try {
+				Controller.getInstance().startBidder(cmd);
+			    } catch (Exception e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+			    }
 			}
+		    }
 		}
-
+		Thread.sleep(60000);
+	    } catch (InterruptedException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	    }
 	}
 
-	public String getKey() {
-		return key;
-	}
+    }
 
-	public boolean canRun() {
-		String value = null;
-		try {
-			value = redisson.get(key);
-			if (value == null)
-				Thread.sleep(2000);
-			value = redisson.get(key);
-		} catch (Exception error) {
-			System.out.println("*** Error retrieving deadman switch");
-		}
-		//System.out.println("=========> Accounting: " + value);
-		if (value == null) {
-			return false;
-		}
-		return true;
+    public String getKey() {
+	return key;
+    }
+
+    public boolean canRun() {
+	String value = null;
+	try {
+	    value = redisson.get(key);
+	    if (value == null)
+		Thread.sleep(2000);
+	    value = redisson.get(key);
+	} catch (Exception error) {
+	    System.out.println("*** Error retrieving deadman switch");
 	}
+	// System.out.println("=========> Accounting: " + value);
+	if (value == null) {
+	    return false;
+	}
+	return true;
+    }
 }

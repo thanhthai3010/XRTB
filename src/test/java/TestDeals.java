@@ -39,158 +39,161 @@ import com.xrtb.tools.DbTools;
  *
  */
 public class TestDeals {
-	static Controller c;
-	public static String test = "";
+    static Controller c;
+    public static String test = "";
 
-	static BidResponse response;
-	static CountDownLatch latch;
+    static BidResponse response;
+    static CountDownLatch latch;
 
-	@BeforeClass
-	public static void testSetup() {
-		try {
-			Config.setup();
-		} catch (Exception error) {
-			error.printStackTrace();
-		}
+    @BeforeClass
+    public static void testSetup() {
+	try {
+	    Config.setup();
+	} catch (Exception error) {
+	    error.printStackTrace();
 	}
+    }
 
-	@AfterClass
-	public static void testCleanup() {
-		Config.teardown();
+    @AfterClass
+    public static void testCleanup() {
+	Config.teardown();
+    }
+
+    /**
+     * Test a private auction with a deal not present in the campaigns.
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testPrivateBidNoResponse() throws Exception {
+	HttpPostGet http = new HttpPostGet();
+	String bid = Charset.defaultCharset()
+		.decode(ByteBuffer.wrap(Files.readAllBytes(Paths.get("./SampleBids/nexagePrivateAuction.txt"))))
+		.toString();
+	String s = null;
+	long time = 0;
+
+	String xtime = null;
+	try {
+	    time = System.currentTimeMillis();
+	    s = http.sendPost("http://" + Config.testHost + "/rtb/bids/nexage", bid, 300000, 300000);
+	    time = System.currentTimeMillis() - time;
+	    xtime = http.getHeader("X-TIME");
+	} catch (Exception error) {
+	    fail("Can't connect to test host: " + Config.testHost);
 	}
+	assertNull(s);
+	int code = http.getResponseCode();
+	assertEquals(code, 204);
+    }
 
-	
+    /**
+     * Test a private auction with a deal not present in the campaigns.
+     * 
+     * @throws Exception
+     */
+    @Test
+    public void testPreferredOkToBid() throws Exception {
+	HttpPostGet http = new HttpPostGet();
+	String bid = Charset.defaultCharset()
+		.decode(ByteBuffer.wrap(Files.readAllBytes(Paths.get("./SampleBids/nexagePreferredAuction.txt"))))
+		.toString();
+	String s = null;
+	long time = 0;
+
+	String xtime = null;
+	try {
+	    time = System.currentTimeMillis();
+	    s = http.sendPost("http://" + Config.testHost + "/rtb/bids/nexage", bid, 300000, 300000);
+	    time = System.currentTimeMillis() - time;
+	    xtime = http.getHeader("X-TIME");
+	} catch (Exception error) {
+	    fail("Can't connect to test host: " + Config.testHost);
+	}
 	/**
-	 * Test a private auction with a deal not present in the campaigns.
-	 * @throws Exception
+	 * Any bid will do
 	 */
-	@Test
-	public void testPrivateBidNoResponse() throws Exception {
-		HttpPostGet http = new HttpPostGet();
-		String bid = Charset.defaultCharset()
-				.decode(ByteBuffer.wrap(Files.readAllBytes(Paths.get("./SampleBids/nexagePrivateAuction.txt")))).toString();
-		String s = null;
-		long time = 0;
-	
-		String xtime = null;
-		try {
-			time = System.currentTimeMillis();
-			s = http.sendPost("http://" + Config.testHost + "/rtb/bids/nexage", bid, 300000, 300000);
-			time = System.currentTimeMillis() - time;
-			xtime = http.getHeader("X-TIME");
-		} catch (Exception error) {
-			fail("Can't connect to test host: " + Config.testHost);
-		}
-		assertNull(s);
-		int code = http.getResponseCode();
-		assertEquals(code,204);
-	}
-	
-	/**
-	 * Test a private auction with a deal not present in the campaigns.
-	 * @throws Exception
-	 */
-	@Test
-	public void testPreferredOkToBid() throws Exception {
-		HttpPostGet http = new HttpPostGet();
-		String bid = Charset.defaultCharset()
-				.decode(ByteBuffer.wrap(Files.readAllBytes(Paths.get("./SampleBids/nexagePreferredAuction.txt")))).toString();
-		String s = null;
-		long time = 0;
-	
-		String xtime = null;
-		try {
-			time = System.currentTimeMillis();
-			s = http.sendPost("http://" + Config.testHost + "/rtb/bids/nexage", bid, 300000, 300000);
-			time = System.currentTimeMillis() - time;
-			xtime = http.getHeader("X-TIME");
-		} catch (Exception error) {
-			fail("Can't connect to test host: " + Config.testHost);
-		}
-		/**
-		 * Any bid will do
-		 */
-		assertNotNull(s);
-		int code = http.getResponseCode();
-		assertEquals(code,200);
-	}
-	
-	@Test
-	public void testPrivateResponse() throws Exception {
-		HttpPostGet http = new HttpPostGet();
-		String bid = Charset.defaultCharset()
-				.decode(ByteBuffer.wrap(Files.readAllBytes(Paths.get("./SampleBids/nexagePrivateAuction1.txt")))).toString();
-		String s = null;
-		long time = 0;
-	
-		String xtime = null;
-		try {
-			time = System.currentTimeMillis();
-			s = http.sendPost("http://" + Config.testHost + "/rtb/bids/nexage", bid, 300000, 300000);
-			time = System.currentTimeMillis() - time;
-			xtime = http.getHeader("X-TIME");
-		} catch (Exception error) {
-			fail("Can't connect to test host: " + Config.testHost);
-		}
-		assertTrue(s.contains("ThisShouldBid"));
-		assertNotNull(s);
-		int code = http.getResponseCode();
-		assertEquals(code,200);
-	}
-	
-	/**
-	 * Test the deal object
-	 */
-	@Test
-	public void testDealsObject() {
+	assertNotNull(s);
+	int code = http.getResponseCode();
+	assertEquals(code, 200);
+    }
 
-		Deals deals = new Deals();
-		Deal a = new Deal("a",1);
-		Deal b = new Deal("b",2);
-		deals.add(a);
-		deals.add(b);
-		
-		List test = new ArrayList();
-		test.add("c");
-		Deal x = deals.findDealRandom(test);
-		assertNull(x);
-		
-		// Must be a
-		test.add("a");
-		x = deals.findDealRandom(test);
-		assertTrue(x.id.equals("a"));
-		
-		test.add("b");
-		
-		// Can be a or B
-		int isA = 0;
-		for (int i=0;i<10;i++) {
-			x = deals.findDealRandom(test);
-			if (x.id.equals("a"))
-				isA++;
-		}
-		assertTrue(isA != 10);
-		
-		
-		// Must be b
-		int isB = 0;
-		for (int i=0;i<10;i++) {
-			x = deals.findDealHighest(test);
-			if (x.id.equals("b"))
-				isB++;
-		}
-		assertTrue(isB == 10);
-		
-		Deal z = new Deal("z",2);
-		deals.add(z);
-		test.add("z");
-		
-		// Can be b or z 
-		isB = 0;
-		for (int i=0;i<10;i++) {
-			x = deals.findDealHighest(test);
-			if (x.id.equals("b"))
-				isB++;
-		}
+    @Test
+    public void testPrivateResponse() throws Exception {
+	HttpPostGet http = new HttpPostGet();
+	String bid = Charset.defaultCharset()
+		.decode(ByteBuffer.wrap(Files.readAllBytes(Paths.get("./SampleBids/nexagePrivateAuction1.txt"))))
+		.toString();
+	String s = null;
+	long time = 0;
+
+	String xtime = null;
+	try {
+	    time = System.currentTimeMillis();
+	    s = http.sendPost("http://" + Config.testHost + "/rtb/bids/nexage", bid, 300000, 300000);
+	    time = System.currentTimeMillis() - time;
+	    xtime = http.getHeader("X-TIME");
+	} catch (Exception error) {
+	    fail("Can't connect to test host: " + Config.testHost);
 	}
+	assertTrue(s.contains("ThisShouldBid"));
+	assertNotNull(s);
+	int code = http.getResponseCode();
+	assertEquals(code, 200);
+    }
+
+    /**
+     * Test the deal object
+     */
+    @Test
+    public void testDealsObject() {
+
+	Deals deals = new Deals();
+	Deal a = new Deal("a", 1);
+	Deal b = new Deal("b", 2);
+	deals.add(a);
+	deals.add(b);
+
+	List test = new ArrayList();
+	test.add("c");
+	Deal x = deals.findDealRandom(test);
+	assertNull(x);
+
+	// Must be a
+	test.add("a");
+	x = deals.findDealRandom(test);
+	assertTrue(x.id.equals("a"));
+
+	test.add("b");
+
+	// Can be a or B
+	int isA = 0;
+	for (int i = 0; i < 10; i++) {
+	    x = deals.findDealRandom(test);
+	    if (x.id.equals("a"))
+		isA++;
+	}
+	assertTrue(isA != 10);
+
+	// Must be b
+	int isB = 0;
+	for (int i = 0; i < 10; i++) {
+	    x = deals.findDealHighest(test);
+	    if (x.id.equals("b"))
+		isB++;
+	}
+	assertTrue(isB == 10);
+
+	Deal z = new Deal("z", 2);
+	deals.add(z);
+	test.add("z");
+
+	// Can be b or z
+	isB = 0;
+	for (int i = 0; i < 10; i++) {
+	    x = deals.findDealHighest(test);
+	    if (x.id.equals("b"))
+		isB++;
+	}
+    }
 }

@@ -1,4 +1,5 @@
 package com.xrtb.tools;
+
 import java.io.BufferedReader;
 
 import java.io.FileReader;
@@ -26,21 +27,20 @@ import com.xrtb.blocks.NavMap;
 import com.xrtb.common.Configuration;
 
 public class AeroRange {
-	
-	static final SizeOf sizeOf = SizeOf.newInstance();
-	
-	public static void main(String args[]) throws Exception {
-		AerospikeClient client = new AerospikeClient(args[0], 3000);
-		String skey = "accountingsystem";
-		Key key = new Key("test", "cache", skey);
-		
-		while(true) {
-			Record record = null;
-			record = client.get(null, key);
-			String value = (String)record.bins.get("value");
-			System.out.println(value);
-			Thread.sleep(1000);
-		}
+
+    static final SizeOf sizeOf = SizeOf.newInstance();
+
+    public static void main(String args[]) throws Exception {
+	AerospikeClient client = new AerospikeClient(args[0], 3000);
+	String skey = "accountingsystem";
+	Key key = new Key("test", "cache", skey);
+
+	while (true) {
+	    Record record = null;
+	    record = client.get(null, key);
+	    String value = (String) record.bins.get("value");
+	    System.out.println(value);
+	    Thread.sleep(1000);
 	}
+    }
 }
-	

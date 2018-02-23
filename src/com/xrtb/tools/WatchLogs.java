@@ -12,57 +12,59 @@ import com.xrtb.jmq.RTopic;;
  * </p>
  * <p>
  * Defaults: -redis localhost:6379 -level 2 -to '*'
+ * 
  * @author Ben M. Faul
  *
  */
 
 public class WatchLogs {
-	static String endpoint;
-	
-/**
- * Main entry point, see description for usage.
- * @param args String[]. The array of arguments.
- */
- public static void main(String [] args) throws Exception {
-		String endpoint = "tcp://*:5574";	
-		int i = 0;
-		WatchLogs tool = null;
-		if (args.length > 0) {
-			while( i <args.length) {
-				if (args[i].equals("-endpoint")) {
-					endpoint = args[i+1];
-					i+= 2;
-				} else {
-					System.err.println("Unknown directive: " + args[i]);
-					System.exit(1);
-				}
-			}
-		} 
-		tool = new WatchLogs(endpoint);
- }
- 
- /**
-  * Instantiate a connection to localhost
-  * Also contains the listener for responses.
-  * @param redis String. The redis:host string.
-  */
- public WatchLogs(String endpoint) throws Exception {
+    static String endpoint;
 
-     RTopic responses = new RTopic(endpoint);
-     responses.subscribe("logs");
-     responses.addListener(new MessageListener<Map>() {
-         @Override
-         public void onMessage(String channel, Map msg) {
-        	 try {
-        	 String content = DbTools.mapper
-     				.writer()
-     				.withDefaultPrettyPrinter()
-     				.writeValueAsString(msg);
-             System.out.println("<<<<<" + content);
-        	 } catch (Exception error) {
-        		 error.printStackTrace();
-        	 }
-         }
-     });
- }
+    /**
+     * Main entry point, see description for usage.
+     * 
+     * @param args
+     *            String[]. The array of arguments.
+     */
+    public static void main(String[] args) throws Exception {
+	String endpoint = "tcp://*:5574";
+	int i = 0;
+	WatchLogs tool = null;
+	if (args.length > 0) {
+	    while (i < args.length) {
+		if (args[i].equals("-endpoint")) {
+		    endpoint = args[i + 1];
+		    i += 2;
+		} else {
+		    System.err.println("Unknown directive: " + args[i]);
+		    System.exit(1);
+		}
+	    }
+	}
+	tool = new WatchLogs(endpoint);
+    }
+
+    /**
+     * Instantiate a connection to localhost Also contains the listener for
+     * responses.
+     * 
+     * @param redis
+     *            String. The redis:host string.
+     */
+    public WatchLogs(String endpoint) throws Exception {
+
+	RTopic responses = new RTopic(endpoint);
+	responses.subscribe("logs");
+	responses.addListener(new MessageListener<Map>() {
+	    @Override
+	    public void onMessage(String channel, Map msg) {
+		try {
+		    String content = DbTools.mapper.writer().withDefaultPrettyPrinter().writeValueAsString(msg);
+		    System.out.println("<<<<<" + content);
+		} catch (Exception error) {
+		    error.printStackTrace();
+		}
+	    }
+	});
+    }
 }

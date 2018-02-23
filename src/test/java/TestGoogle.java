@@ -50,97 +50,97 @@ import com.xrtb.tools.DbTools;
  *
  */
 public class TestGoogle {
-	public static final String testHost = "localhost:8080";
-	static final String redisHost = "localhost3000";
-	static DbTools tools;
-	/** The RTBServer object used in the tests. */
-	static RTBServer server;
+    public static final String testHost = "localhost:8080";
+    static final String redisHost = "localhost3000";
+    static DbTools tools;
+    /** The RTBServer object used in the tests. */
+    static RTBServer server;
 
-	@BeforeClass
-	public static void testSetup() {
-		try {
-			DbTools tools = new DbTools("localhost:3000");
-			tools.clear();
-			tools.loadDatabase("database.json");
+    @BeforeClass
+    public static void testSetup() {
+	try {
+	    DbTools tools = new DbTools("localhost:3000");
+	    tools.clear();
+	    tools.loadDatabase("database.json");
 
-			if (server == null) {
-				server = new RTBServer("./Campaigns/payday.json");
-				int wait = 0;
-				while (!server.isReady() && wait < 10) {
-					Thread.sleep(1000);
-					wait++;
-				}
-				if (wait == 10) {
-					fail("Server never started");
-				}
-				Thread.sleep(1000);
-			} else {
-				Configuration c = Configuration.getInstance();
-				c.campaignsList.clear();
-				User u = DataBaseObject.getInstance().get("ben");
-				for (Campaign camp : u.campaigns) {
-					c.addCampaign("ben", camp.adId);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.toString());
+	    if (server == null) {
+		server = new RTBServer("./Campaigns/payday.json");
+		int wait = 0;
+		while (!server.isReady() && wait < 10) {
+		    Thread.sleep(1000);
+		    wait++;
 		}
-	}
-
-	@AfterClass
-	public static void testCleanup() {
+		if (wait == 10) {
+		    fail("Server never started");
+		}
+		Thread.sleep(1000);
+	    } else {
 		Configuration c = Configuration.getInstance();
 		c.campaignsList.clear();
+		User u = DataBaseObject.getInstance().get("ben");
+		for (Campaign camp : u.campaigns) {
+		    c.addCampaign("ben", camp.adId);
+		}
+	    }
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    fail(e.toString());
 	}
+    }
 
-	/**
-	 * Test a valid bid response.
-	 * 
-	 * @throws Exception
-	 *             on networking errors.
-	 */
-	//@Test
-	public void testGoogleProtobufBanner() throws Exception {
-		HttpPostGet http = new HttpPostGet();
-		GoogleBidRequest google = GoogleBidRequest.fromRTBFile("./SampleBids/nexage.txt");
-		byte[] protobytes = google.getInternal().toByteArray();
-		byte[] returns = http.sendPost("http://" + Config.testHost + "/rtb/bids/google", protobytes, 300000, 300000);
-		int code = http.getResponseCode();
-		assertTrue(code == 200);
-		assertNotNull(returns);
-		GoogleBidResponse rr = new GoogleBidResponse(returns);
-		System.out.println(rr.getInternal());
+    @AfterClass
+    public static void testCleanup() {
+	Configuration c = Configuration.getInstance();
+	c.campaignsList.clear();
+    }
 
-	}
+    /**
+     * Test a valid bid response.
+     * 
+     * @throws Exception
+     *             on networking errors.
+     */
+    // @Test
+    public void testGoogleProtobufBanner() throws Exception {
+	HttpPostGet http = new HttpPostGet();
+	GoogleBidRequest google = GoogleBidRequest.fromRTBFile("./SampleBids/nexage.txt");
+	byte[] protobytes = google.getInternal().toByteArray();
+	byte[] returns = http.sendPost("http://" + Config.testHost + "/rtb/bids/google", protobytes, 300000, 300000);
+	int code = http.getResponseCode();
+	assertTrue(code == 200);
+	assertNotNull(returns);
+	GoogleBidResponse rr = new GoogleBidResponse(returns);
+	System.out.println(rr.getInternal());
 
-	//@Test
-	public void testGoogleProtobufVideo() throws Exception {
-		HttpPostGet http = new HttpPostGet();
-		GoogleBidRequest google = GoogleBidRequest.fromRTBFile("./SampleBids/nexage.txt");
-		byte[] protobytes = google.getInternal().toByteArray();
-		byte[] returns = http.sendPost("http://" + Config.testHost + "/rtb/bids/google", protobytes, 300000, 300000);
-		int code = http.getResponseCode();
-		assertTrue(code == 200);
-		assertNotNull(returns);
-		GoogleBidResponse rr = new GoogleBidResponse(returns);
-		System.out.println(rr.getInternal());
+    }
 
-	}
-	
-	@Test
-	public void testGoogleDecrypt() throws Exception {
-		String payload = "http://localhost:8080/rtb/win/google/WP5SPgAE9TEKDFtHAAnnOm9LuUuqG14LOdRXXQ/0.0/0.0/55/87/WPfq6wABDYsKUaXKwgwIUw";
-		HttpPostGet http = new HttpPostGet();
-		http.sendGet(payload,300000,300000);
-	}
+    // @Test
+    public void testGoogleProtobufVideo() throws Exception {
+	HttpPostGet http = new HttpPostGet();
+	GoogleBidRequest google = GoogleBidRequest.fromRTBFile("./SampleBids/nexage.txt");
+	byte[] protobytes = google.getInternal().toByteArray();
+	byte[] returns = http.sendPost("http://" + Config.testHost + "/rtb/bids/google", protobytes, 300000, 300000);
+	int code = http.getResponseCode();
+	assertTrue(code == 200);
+	assertNotNull(returns);
+	GoogleBidResponse rr = new GoogleBidResponse(returns);
+	System.out.println(rr.getInternal());
+
+    }
+
+    @Test
+    public void testGoogleDecrypt() throws Exception {
+	String payload = "http://localhost:8080/rtb/win/google/WP5SPgAE9TEKDFtHAAnnOm9LuUuqG14LOdRXXQ/0.0/0.0/55/87/WPfq6wABDYsKUaXKwgwIUw";
+	HttpPostGet http = new HttpPostGet();
+	http.sendGet(payload, 300000, 300000);
+    }
 }
 
 class MyReader extends OpenRtbJsonReader {
 
-	protected MyReader(OpenRtbJsonFactory factory) {
-		super(factory);
-		// TODO Auto-generated constructor stub
-	}
+    protected MyReader(OpenRtbJsonFactory factory) {
+	super(factory);
+	// TODO Auto-generated constructor stub
+    }
 
 }

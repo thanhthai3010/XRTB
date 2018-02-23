@@ -8,20 +8,17 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.MissingNode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.xrtb.common.Campaign;
 import com.xrtb.common.Configuration;
 import com.xrtb.common.Creative;
 import com.xrtb.common.Node;
-import com.xrtb.exchanges.appnexus.Appnexus;
 import com.xrtb.pojo.BidRequest;
 import com.xrtb.probe.Probe;
 
 import edu.emory.mathcs.backport.java.util.Collections;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * CampaignProcessor. Given a campaign, process it into a bid. The
@@ -40,245 +37,243 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class CampaignProcessor implements Runnable {
-	static Random randomGenerator = new Random();
-	
-	public static Probe probe = new Probe();
-	
-	/** The campaign used by this processor object */
-	Campaign camp;
+    static Random randomGenerator = new Random();
 
-	/** The bid request that will be used by this processor object */
-	BidRequest br;
+    public static Probe probe = new Probe();
 
-	/**
-	 * The unique ID assigned to the bid response. This is probably not needed
-	 * TODO: Need to remove this
-	 */
-	UUID uuid = UUID.randomUUID();
+    /** The campaign used by this processor object */
+    Campaign camp;
 
-	/** The selected creative at the end of the run, if onw is satisfied. */
-	SelectedCreative selected = null;
+    /** The bid request that will be used by this processor object */
+    BidRequest br;
 
-	/** Is processing complete */
-	boolean done = false;
+    /**
+     * The unique ID assigned to the bid response. This is probably not needed TODO:
+     * Need to remove this
+     */
+    UUID uuid = UUID.randomUUID();
 
-	/** The count down latch */
-	AbortableCountDownLatch latch;
+    /** The selected creative at the end of the run, if onw is satisfied. */
+    SelectedCreative selected = null;
 
-	/** The flag for starting the countdown */
-	CountDownLatch flag;
+    /** Is processing complete */
+    boolean done = false;
 
-	/** The logging object */
-	static final Logger logger = LoggerFactory.getLogger(CampaignProcessor.class);
+    /** The count down latch */
+    AbortableCountDownLatch latch;
 
-	/**
-	 * Constructor.
-	 * 
-	 * @param camp
-	 *            Campaign. The campaign to process
-	 * @param br
-	 *            . BidRequest. The bid request to apply to this campaign.
-	 */
-	public CampaignProcessor(Campaign camp, BidRequest br, CountDownLatch flag,
-			AbortableCountDownLatch latch) {
-		this.camp = camp;
-		this.br = br;
-		this.latch = latch;
-		this.flag = flag;
-		
-		if (latch != null)
-			start();
+    /** The flag for starting the countdown */
+    CountDownLatch flag;
+
+    /** The logging object */
+    static final Logger logger = LoggerFactory.getLogger(CampaignProcessor.class);
+
+    /**
+     * Constructor.
+     * 
+     * @param camp
+     *            Campaign. The campaign to process
+     * @param br
+     *            . BidRequest. The bid request to apply to this campaign.
+     */
+    public CampaignProcessor(Campaign camp, BidRequest br, CountDownLatch flag, AbortableCountDownLatch latch) {
+	this.camp = camp;
+	this.br = br;
+	this.latch = latch;
+	this.flag = flag;
+
+	if (latch != null)
+	    start();
+    }
+
+    public void start() {
+	// me = new Thread(this);
+	// me.start();
+    }
+
+    public void run() {
+	boolean printNoBidReason = Configuration.getInstance().printNoBidReason;
+	int logLevel = 5;
+	StringBuilder err = null;
+	if (printNoBidReason || br.id.equals("123") || probe != null) {
+	    err = new StringBuilder();
+	    if (br.id.equals("123")) {
+		logLevel = 1;
+		printNoBidReason = true;
+	    }
 	}
+	// RunRecord rec = new RunRecord("Selector");
 
-	public void start() {
-//		me = new Thread(this);
-//		me.start();
-	}
-
-	public void run() {
-		boolean printNoBidReason = Configuration.getInstance().printNoBidReason;
-		int logLevel = 5;
-		StringBuilder err = null;
-		if (printNoBidReason || br.id.equals("123")  || probe != null) {
-			err = new StringBuilder();
-			if (br.id.equals("123")) {
-				logLevel = 1;
-				printNoBidReason = true;
-			}
-		}
-		// RunRecord rec = new RunRecord("Selector");
-
-		if (flag != null) {
-			try {
-				flag.await();
-			} catch (InterruptedException e1) {
-				// TODO Auto-generated catch block
-				e1.printStackTrace();
-				if (latch != null)
-					latch.countNull();
-				done = true;
-				return;
-			}
-		}
-		/**
-		 * See if there is a creative that matches first
-		 */
-		if (camp == null) {
-			if (latch != null)
-				latch.countNull();
-			done = true;
-			return;
-		}
-		
-		Node n = null;
-		try {
-			for (int i = 0; i < camp.attributes.size(); i++) {
-				n = camp.attributes.get(i);
-				
-				if (n.test(br) == false) {
-					if (probe != null) {
-						probe.process(br.getExchange(), camp.adId, "Global", new StringBuilder(n.hierarchy));
-					}
-					if (printNoBidReason) 
-						logger.info("camp.adId {} doesnt match the hierarchy: {}", camp.adId,n.hierarchy);
-					done = true;
-					if (latch != null)
-						latch.countNull();
-					selected = null;
-					return;
-				}
-			}
-		} catch (Exception error) {
-			System.out.println("-----------> Campaign: " + camp.adId + ", ERROR IN NODE: " + n.name + ", Hierarchy = " + n.hierarchy);
-			System.out.println(br.toString());
-			error.printStackTrace();
-			
-			selected = null;
-			done = true;
-			if (latch != null)
-				latch.countNull();
-			return;
-		}
-		// rec.add("nodes");
-		
-		///////////////////////////
-		
-		Map<String,String> capSpecs = new ConcurrentHashMap();
-		List<Creative> creatives = new ArrayList(camp.creatives);
-		Collections.shuffle(creatives);
-		StringBuilder xerr = new StringBuilder();
-		for (Creative create : creatives) {
-			
-			if ((selected  = create.process(br, capSpecs, camp.adId,err, probe)) != null) {
-				break;
-			} else {
-				if (probe != null) {
-					probe.process(br.getExchange(), camp.adId, create.impid, err);
-					if (printNoBidReason) {
-						xerr.append(camp.adId);
-						xerr.append("/");
-						xerr.append(create.impid);
-						xerr.append(" ===> ");
-						xerr.append(err);
-						xerr.append("\n");
-					}
-					err.setLength(0);
-				}
-			}
-		}
-		probe.incrementTotal(br.getExchange(), camp.adId);
-		err = xerr;
-
-		if (selected == null) {
-			if (latch != null)
-				latch.countNull();
-			if (printNoBidReason)
-				try {
-					logger.info("nothing matches: {}",err.toString());
-				} catch (Exception e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			done = true;
-			if (err != null)
-				err.setLength(0);
-			return;
-		}
-
-
-		
-		if (printNoBidReason) {
-			String str = "";
-			str += selected.impid + " ";
-			try {
-				logger.info("{} is candidate, creatives = {}", camp.adId, str);
-			} catch (Exception error) {
-				error.printStackTrace();
-			}
-		}
-		
-		selected.capSpec = capSpecs.get(selected.creative.impid);
-
-		try {
-			if (printNoBidReason && logLevel == 1) {
-				logger.info("No match: {}",err.toString());
-			}
-		} catch (Exception error) {
-			error.printStackTrace();
-		}
+	if (flag != null) {
+	    try {
+		flag.await();
+	    } catch (InterruptedException e1) {
+		// TODO Auto-generated catch block
+		e1.printStackTrace();
 		if (latch != null)
-			latch.countDown(selected); 
-		if (probe != null) {
-			probe.process(br.getExchange(), camp.adId, selected.impid);
-		}
-		selected.campaign = this.camp;
-		probe.incrementBid(br.getExchange(), camp.adId);
+		    latch.countNull();
 		done = true;
+		return;
+	    }
 	}
-
 	/**
-	 * Is the campaign processing done?
-	 * 
-	 * @return boolean. Returns true when the processing is complete.
+	 * See if there is a creative that matches first
 	 */
-	public boolean isDone() {
-		return done;
+	if (camp == null) {
+	    if (latch != null)
+		latch.countNull();
+	    done = true;
+	    return;
 	}
 
-	/**
-	 * Terminate the thread processing if c == true.
-	 * 
-	 * @param c
-	 *            boolean. Set to true to cancel
-	 */
-	public void cancel(boolean c) {
-	//	if (c)
-	//		me.interrupt();
-	}
+	Node n = null;
+	try {
+	    for (int i = 0; i < camp.attributes.size(); i++) {
+		n = camp.attributes.get(i);
 
-	/**
-	 * Return the selected creative.
-	 * 
-	 * @return SelectedCreative. The creative returned by the processor.
-	 */
-	public SelectedCreative getSelectedCreative() {
-		return selected;
-	}
-
-	public SelectedCreative call() {
-		while (true) {
-			if (isDone())
-				return selected;
-			try {
-				Thread.sleep(1);
-			} catch (InterruptedException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-				return null;
-			}
-
+		if (n.test(br) == false) {
+		    if (probe != null) {
+			probe.process(br.getExchange(), camp.adId, "Global", new StringBuilder(n.hierarchy));
+		    }
+		    if (printNoBidReason)
+			logger.info("camp.adId {} doesnt match the hierarchy: {}", camp.adId, n.hierarchy);
+		    done = true;
+		    if (latch != null)
+			latch.countNull();
+		    selected = null;
+		    return;
 		}
-			
+	    }
+	} catch (Exception error) {
+	    System.out.println("-----------> Campaign: " + camp.adId + ", ERROR IN NODE: " + n.name + ", Hierarchy = "
+		    + n.hierarchy);
+	    System.out.println(br.toString());
+	    error.printStackTrace();
+
+	    selected = null;
+	    done = true;
+	    if (latch != null)
+		latch.countNull();
+	    return;
 	}
+	// rec.add("nodes");
+
+	///////////////////////////
+
+	Map<String, String> capSpecs = new ConcurrentHashMap();
+	List<Creative> creatives = new ArrayList(camp.creatives);
+	Collections.shuffle(creatives);
+	StringBuilder xerr = new StringBuilder();
+	for (Creative create : creatives) {
+
+	    if ((selected = create.process(br, capSpecs, camp.adId, err, probe)) != null) {
+		break;
+	    } else {
+		if (probe != null) {
+		    probe.process(br.getExchange(), camp.adId, create.impid, err);
+		    if (printNoBidReason) {
+			xerr.append(camp.adId);
+			xerr.append("/");
+			xerr.append(create.impid);
+			xerr.append(" ===> ");
+			xerr.append(err);
+			xerr.append("\n");
+		    }
+		    err.setLength(0);
+		}
+	    }
+	}
+	probe.incrementTotal(br.getExchange(), camp.adId);
+	err = xerr;
+
+	if (selected == null) {
+	    if (latch != null)
+		latch.countNull();
+	    if (printNoBidReason)
+		try {
+		    logger.info("nothing matches: {}", err.toString());
+		} catch (Exception e) {
+		    // TODO Auto-generated catch block
+		    e.printStackTrace();
+		}
+	    done = true;
+	    if (err != null)
+		err.setLength(0);
+	    return;
+	}
+
+	if (printNoBidReason) {
+	    String str = "";
+	    str += selected.impid + " ";
+	    try {
+		logger.info("{} is candidate, creatives = {}", camp.adId, str);
+	    } catch (Exception error) {
+		error.printStackTrace();
+	    }
+	}
+
+	selected.capSpec = capSpecs.get(selected.creative.impid);
+
+	try {
+	    if (printNoBidReason && logLevel == 1) {
+		logger.info("No match: {}", err.toString());
+	    }
+	} catch (Exception error) {
+	    error.printStackTrace();
+	}
+	if (latch != null)
+	    latch.countDown(selected);
+	if (probe != null) {
+	    probe.process(br.getExchange(), camp.adId, selected.impid);
+	}
+	selected.campaign = this.camp;
+	probe.incrementBid(br.getExchange(), camp.adId);
+	done = true;
+    }
+
+    /**
+     * Is the campaign processing done?
+     * 
+     * @return boolean. Returns true when the processing is complete.
+     */
+    public boolean isDone() {
+	return done;
+    }
+
+    /**
+     * Terminate the thread processing if c == true.
+     * 
+     * @param c
+     *            boolean. Set to true to cancel
+     */
+    public void cancel(boolean c) {
+	// if (c)
+	// me.interrupt();
+    }
+
+    /**
+     * Return the selected creative.
+     * 
+     * @return SelectedCreative. The creative returned by the processor.
+     */
+    public SelectedCreative getSelectedCreative() {
+	return selected;
+    }
+
+    public SelectedCreative call() {
+	while (true) {
+	    if (isDone())
+		return selected;
+	    try {
+		Thread.sleep(1);
+	    } catch (InterruptedException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+		return null;
+	    }
+
+	}
+
+    }
 
 }

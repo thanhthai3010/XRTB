@@ -17,38 +17,38 @@ import com.aerospike.redisson.RedissonClient;
 
 public class CookieList {
 
-	public static void main(String args[]) throws Exception {
-		int i = 0;
-		String aero = "localhost:3000";
-		String setName = null;
-		String mapName = null;
-		String op = null;
-		String name = null;
-		String file = null;
-		boolean range = false;
+    public static void main(String args[]) throws Exception {
+	int i = 0;
+	String aero = "localhost:3000";
+	String setName = null;
+	String mapName = null;
+	String op = null;
+	String name = null;
+	String file = null;
+	boolean range = false;
 
-		AerospikeClient client = new AerospikeClient("localhost",3000);
-		
-		Key key = new Key("test", "database", "rtb4free");
-		
-		ArrayList<String> list = new ArrayList<String>();
-		
-		TreeSet set = new TreeSet();
-		for (i=0; i < 100000; i++) {
-			list.add(Integer.toString(i));
-			set.add(Integer.toString(i));
-		}
-		Bin bin1 = new Bin("c1x-cookies", set);
-		client.put(null, key, bin1);
-		
-		System.out.println("Done!");
-		
-		Record record = client.get(null, key);
-		long time = System.currentTimeMillis();
-		Set<String> receivedList = (Set<String>) record.getValue("c1x-cookies");
-		receivedList.contains("99999");
-		System.out.println(System.currentTimeMillis() - time);
-		System.out.println("Received List = " + receivedList.size());
+	AerospikeClient client = new AerospikeClient("localhost", 3000);
+
+	Key key = new Key("test", "database", "rtb4free");
+
+	ArrayList<String> list = new ArrayList<String>();
+
+	TreeSet set = new TreeSet();
+	for (i = 0; i < 100000; i++) {
+	    list.add(Integer.toString(i));
+	    set.add(Integer.toString(i));
 	}
-	
+	Bin bin1 = new Bin("c1x-cookies", set);
+	client.put(null, key, bin1);
+
+	System.out.println("Done!");
+
+	Record record = client.get(null, key);
+	long time = System.currentTimeMillis();
+	Set<String> receivedList = (Set<String>) record.getValue("c1x-cookies");
+	receivedList.contains("99999");
+	System.out.println(System.currentTimeMillis() - time);
+	System.out.println("Received List = " + receivedList.size());
+    }
+
 }

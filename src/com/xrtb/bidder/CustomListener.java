@@ -12,45 +12,45 @@ import javax.servlet.http.HttpSessionListener;
 
 /**
  * A class to keep track of users logged in to the system
+ * 
  * @author Ben M. Faul
  *
  */
 
-
 public class CustomListener implements HttpSessionListener {
 
-	static List<HttpSession> sessions = new ArrayList();
-	
-	@Override
-	public void sessionCreated(HttpSessionEvent ev) {
-		HttpSession session = ev.getSession();
-		String id = session.getId();
+    static List<HttpSession> sessions = new ArrayList();
 
-		sessions.add(session);
-		//System.out.println("SESSION: " + id + " was created");
-		
-	}
+    @Override
+    public void sessionCreated(HttpSessionEvent ev) {
+	HttpSession session = ev.getSession();
+	String id = session.getId();
 
-	@Override
-	public void sessionDestroyed(HttpSessionEvent ev) {
-		HttpSession session = ev.getSession();
-		String id = session.getId();
+	sessions.add(session);
+	// System.out.println("SESSION: " + id + " was created");
 
-		sessions.remove(session);
-		//System.out.println("SESSION: " + id + " was destroyed");
-		
+    }
+
+    @Override
+    public void sessionDestroyed(HttpSessionEvent ev) {
+	HttpSession session = ev.getSession();
+	String id = session.getId();
+
+	sessions.remove(session);
+	// System.out.println("SESSION: " + id + " was destroyed");
+
+    }
+
+    public static List<Map> getSessions() {
+	List<Map> list = new ArrayList();
+	for (HttpSession s : sessions) {
+	    Map data = new HashMap();
+	    data.put("username", s.getAttribute("username"));
+	    data.put("id", s.getId());
+	    data.put("page", s.getAttribute("path"));
+	    list.add(data);
 	}
-	
-	public static List<Map> getSessions() {
-		List<Map> list = new ArrayList();
-		for (HttpSession s : sessions) {
-			Map data = new HashMap();
-			data.put("username",s.getAttribute("username"));
-			data.put("id", s.getId());
-			data.put("page", s.getAttribute("path"));	
-			list.add(data);
-		}
-		return list;
-	}
+	return list;
+    }
 
 }

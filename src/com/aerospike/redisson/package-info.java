@@ -1,5 +1,7 @@
 /**
- * Contains the mock redisson object used to serialize/deserialize stuff over the ZeroMQ channels.
+ * Contains the mock redisson object used to serialize/deserialize stuff over
+ * the ZeroMQ channels.
+ * 
  * @author Ben M. Faul
  *
  */

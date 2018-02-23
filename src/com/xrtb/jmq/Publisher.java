@@ -10,61 +10,61 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Publisher {
 
-	Socket publisher = null;
-	Context context = JMQContext.getInstance();
-	boolean running = false;
-	String topicName = null;
-	
-	ObjectMapper mapper = new ObjectMapper();
+    Socket publisher = null;
+    Context context = JMQContext.getInstance();
+    boolean running = false;
+    String topicName = null;
 
-	public static void main(String[] args) throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
 
-		// Publisher s = new Publisher("tcp://*:5570", "test");
-		Publisher s = new Publisher("tcp://*:5570", "test");
-		for (int i = 0; i < 100; i++) {
-			s.publish("Hello");
-		}
-		s.shutdown();
+    public static void main(String[] args) throws Exception {
+
+	// Publisher s = new Publisher("tcp://*:5570", "test");
+	Publisher s = new Publisher("tcp://*:5570", "test");
+	for (int i = 0; i < 100; i++) {
+	    s.publish("Hello");
 	}
+	s.shutdown();
+    }
 
-	public Publisher(String binding, String topicName) throws Exception {
+    public Publisher(String binding, String topicName) throws Exception {
 
-		mapper.setSerializationInclusion(Include.NON_NULL);
-		mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-		
-		context = ZMQ.context(1);
-		publisher = context.socket(ZMQ.PUB);
-		publisher.bind(binding);
+	mapper.setSerializationInclusion(Include.NON_NULL);
+	mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
-		Thread.sleep(100);
-		//System.out.println("Starting Publisher..");
-		publisher.setIdentity("B".getBytes());
-		publisher.setLinger(5000);
-		publisher.setHWM(0);
+	context = ZMQ.context(1);
+	publisher = context.socket(ZMQ.PUB);
+	publisher.bind(binding);
 
-		this.topicName = topicName;
-	}
+	Thread.sleep(100);
+	// System.out.println("Starting Publisher..");
+	publisher.setIdentity("B".getBytes());
+	publisher.setLinger(5000);
+	publisher.setHWM(0);
 
-	public void publish(Object message)  {
-		publisher.sendMore(topicName);
-		String msg = Tools.serialize(mapper, message);
-		if (msg != null)
-			publisher.send(msg);
-		else
-			System.err.println("No publish:" + message);
-	}
+	this.topicName = topicName;
+    }
 
-	public void publishAsync(Object message)  {
-		Runnable u = () -> {
-			publisher.sendMore(topicName);
-			String msg = Tools.serialize(mapper,message);
-			publisher.send(msg);
-		};
-		Thread nthread = new Thread(u);
-		nthread.start();
-	}
+    public void publish(Object message) {
+	publisher.sendMore(topicName);
+	String msg = Tools.serialize(mapper, message);
+	if (msg != null)
+	    publisher.send(msg);
+	else
+	    System.err.println("No publish:" + message);
+    }
 
-	public void shutdown() {
-		publisher.close();
-	}
+    public void publishAsync(Object message) {
+	Runnable u = () -> {
+	    publisher.sendMore(topicName);
+	    String msg = Tools.serialize(mapper, message);
+	    publisher.send(msg);
+	};
+	Thread nthread = new Thread(u);
+	nthread.start();
+    }
+
+    public void shutdown() {
+	publisher.close();
+    }
 }

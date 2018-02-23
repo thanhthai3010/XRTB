@@ -42,82 +42,81 @@ import com.xrtb.tools.DbTools;
  *
  */
 public class TestAdx {
-	public static final String testHost = "localhost:8080";
-	static final String redisHost = "localhost3000";
-	static DbTools tools;
-	/** The RTBServer object used in the tests. */
-	static RTBServer server;
+    public static final String testHost = "localhost:8080";
+    static final String redisHost = "localhost3000";
+    static DbTools tools;
+    /** The RTBServer object used in the tests. */
+    static RTBServer server;
 
-	@BeforeClass
-	public static void testSetup() {
-		try {
-			DbTools tools = new DbTools("localhost:3000");
-			tools.clear();
-			tools.loadDatabase("database.json");
+    @BeforeClass
+    public static void testSetup() {
+	try {
+	    DbTools tools = new DbTools("localhost:3000");
+	    tools.clear();
+	    tools.loadDatabase("database.json");
 
-			if (server == null) {
-				server = new RTBServer("./Campaigns/payday.json");
-				int wait = 0;
-				while (!server.isReady() && wait < 10) {
-					Thread.sleep(1000);
-					wait++;
-				}
-				if (wait == 10) {
-					fail("Server never started");
-				}
-				Thread.sleep(1000);
-			} else {
-				Configuration c = Configuration.getInstance();
-				c.campaignsList.clear();
-				User u = DataBaseObject.getInstance().get("ben");
-				for (Campaign camp : u.campaigns) {
-					c.addCampaign("ben", camp.adId);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			fail(e.toString());
+	    if (server == null) {
+		server = new RTBServer("./Campaigns/payday.json");
+		int wait = 0;
+		while (!server.isReady() && wait < 10) {
+		    Thread.sleep(1000);
+		    wait++;
 		}
-	}
-
-	@AfterClass
-	public static void testCleanup() {
+		if (wait == 10) {
+		    fail("Server never started");
+		}
+		Thread.sleep(1000);
+	    } else {
 		Configuration c = Configuration.getInstance();
 		c.campaignsList.clear();
-	}
-
-	/**
-	 * Test a valid bid response.
-	 * 
-	 * @throws Exception
-	 *             on networking errors.
-	 */
-	@Test
-	public void testAdx() throws Exception {
-		BufferedReader br = new BufferedReader(new FileReader("SampleBids/adxrequests"));
-		String data;
-		ObjectMapper mapper = new ObjectMapper();
-		HttpPostGet http = new HttpPostGet();
-		while ((data = br.readLine()) != null) {
-			Map map = mapper.readValue(data, Map.class);
-			String protobuf = (String) map.get("protobuf");
-			if (protobuf != null) {
-				byte[] protobytes = DatatypeConverter.parseBase64Binary(protobuf);
-				InputStream is = new ByteArrayInputStream(protobytes);
-				byte [] returns = http.sendPost("http://" + Config.testHost + "/rtb/bids/adx", protobytes);
-				// AdxBidResponse resp = new AdxBidResponse(returns);
-				// System.out.println(resp.toString());
-			/*	try {
-					AdxBidRequest bidRequest = new AdxBidRequest(is);
-					System.out.println(bidRequest.internal);
-					System.out.println("============================================");
-					System.out.println(bidRequest.root);
-					System.out.println("--------------------------------------------");
-				} catch (Exception error) {
-error.printStackTrace();
-				} */
-			}
+		User u = DataBaseObject.getInstance().get("ben");
+		for (Campaign camp : u.campaigns) {
+		    c.addCampaign("ben", camp.adId);
 		}
-
+	    }
+	} catch (Exception e) {
+	    e.printStackTrace();
+	    fail(e.toString());
 	}
+    }
+
+    @AfterClass
+    public static void testCleanup() {
+	Configuration c = Configuration.getInstance();
+	c.campaignsList.clear();
+    }
+
+    /**
+     * Test a valid bid response.
+     * 
+     * @throws Exception
+     *             on networking errors.
+     */
+    @Test
+    public void testAdx() throws Exception {
+	BufferedReader br = new BufferedReader(new FileReader("SampleBids/adxrequests"));
+	String data;
+	ObjectMapper mapper = new ObjectMapper();
+	HttpPostGet http = new HttpPostGet();
+	while ((data = br.readLine()) != null) {
+	    Map map = mapper.readValue(data, Map.class);
+	    String protobuf = (String) map.get("protobuf");
+	    if (protobuf != null) {
+		byte[] protobytes = DatatypeConverter.parseBase64Binary(protobuf);
+		InputStream is = new ByteArrayInputStream(protobytes);
+		byte[] returns = http.sendPost("http://" + Config.testHost + "/rtb/bids/adx", protobytes);
+		// AdxBidResponse resp = new AdxBidResponse(returns);
+		// System.out.println(resp.toString());
+		/*
+		 * try { AdxBidRequest bidRequest = new AdxBidRequest(is);
+		 * System.out.println(bidRequest.internal);
+		 * System.out.println("============================================");
+		 * System.out.println(bidRequest.root);
+		 * System.out.println("--------------------------------------------"); } catch
+		 * (Exception error) { error.printStackTrace(); }
+		 */
+	    }
+	}
+
+    }
 }

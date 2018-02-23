@@ -33,29 +33,29 @@ import com.xrtb.tools.DbTools;
  *
  */
 public class TestLucene {
-	static Controller c;
-	public static String test = "";
+    static Controller c;
+    public static String test = "";
 
-	static BidResponse response;
-	static CountDownLatch latch;
+    static BidResponse response;
+    static CountDownLatch latch;
 
-	@BeforeClass
-	public static void testSetup() {
-		try {
-			Config.setup();
-		} catch (Exception error) {
-			error.printStackTrace();
-		}
+    @BeforeClass
+    public static void testSetup() {
+	try {
+	    Config.setup();
+	} catch (Exception error) {
+	    error.printStackTrace();
 	}
+    }
 
-	@AfterClass
-	public static void testCleanup() {
-		Config.teardown();
-	}
-	
-	@Test
-	public void testLucene() {
-		Campaign c = Configuration.getInstance().campaignsList.get(0);
-		System.out.println(c.getLucene());
-	}
+    @AfterClass
+    public static void testCleanup() {
+	Config.teardown();
+    }
+
+    @Test
+    public void testLucene() {
+	Campaign c = Configuration.getInstance().campaignsList.get(0);
+	System.out.println(c.getLucene());
+    }
 }

@@ -1,13 +1,9 @@
 {
-	"NOfraud": {
-		"type": "forensiq",
+	"forensiq": {
 		"threshhold": 0,
 		"ck": "none",
 		"endpoint": "",
-		"bidOnError": false,
-		"db":"local/GeoIP2-ISP.mmdb",
-		"watchlist": ["Hetzner", "Amazon web services", "Linode", "Digital Ocean", "Vultr" ]
-		
+		"bidOnError": "false"
 	},
 	"app": {
 		"stopped": false,
@@ -28,22 +24,25 @@
 			"states": "",
 			"zipcodes": ""
 		},
-		"NOaerospike": {
+		"aerospike": {
 			"host": "localhost",
-			"maxconns": 1000,
+			"maxconns": 300,
 			"port": 3000
 		},
 		"zeromq": {
 			"bidchannel": "tcp://*:5571&bids",
 			"responses": "tcp://*:5575&responses",
+			"nobid": "",
 			"winchannel": "tcp://*:5572&wins",
-			"requests": "file://logs/request&time=30",
+			"Xrequests": "file://logs/request&time=30",
+			"requests": "http://localhost:9999/request",
+			"logger": "tcp://*:5574&logs",
 			"clicks": "tcp://*:5573&clicks",
 			"subscribers": {
 				"hosts": ["localhost", "192.168.1.167"],
 				"commands": "5580"
 			},
-			"requeststrategy": 1,
+			"requeststrategy": 50,
 			"status": "file://logs/status&time=30",
 			"reasons": "file://logs/reasons&time=30"
 		},
@@ -77,7 +76,7 @@
 			"id": "ben:payday"
 		}]
 	},
-	"NOssl": {
+	"ssl": {
 		"setKeyStorePath": "data/keystore.jks",
 		"setKeyStorePassword": "password",
 		"setKeyManagerPassword": "password"
@@ -88,8 +87,8 @@
 		"id": "google-id",
 		"bid": "/rtb/bids/google=com.xrtb.exchanges.google.OpenRTB",
 		 "extension": {
-				"e_key": "kB8RQtv1rlArbt1YFRoHUiCn3mtP3d88VdfRRT+ujMA=",
-				"i_key": "+b5gBm7mJcmZgF/YT4bxZoQUsU+vpwqm2sShqc5rcPk="
+                        "e_key": "Your key-here",
+                        "i_key": "Your-key-here"
                 }
 		
 	},
@@ -113,27 +112,12 @@
 	}, {
 		"name": "waardx",
 		"id": "waardx-id",
-		"bid": "/rtb/bids/waardx=com.xrtb.exchanges.Generic&!usesEncodedAdm"
+		"bid": "/rtb/bids/waardx=com.xrtb.exchanges.Generic&usesEncodedAdm"
 	}, {
 		"name": "intango",
 		"id": "intango-id",
 		"bid": "/rtb/bids/intango=com.xrtb.exchanges.Generic"
 	}, {
-		"name": "vdopia",
-		"id": "vdopia-id",
-		"bid": "/rtb/bids/vdopia=com.xrtb.exchanges.Generic"
-	},
-	{
-		"name": "vertamedia",
-		"id": "vertamedia-id",
-		"bid": "/rtb/bids/vertamedia=com.xrtb.exchanges.Generic"
-	},
-	{
-		"name": "ventuno",
-		"id": "ventuno-id",
-		"bid": "/rtb/bids/ventuno=com.xrtb.exchanges.Generic"
-	},
-	{
 		"name": "medianexusnetwork",
 		"id": "mnn-id",
 		"bid": "/rtb/bids/medianexusnetwork=com.xrtb.exchanges.Generic"
@@ -148,7 +132,7 @@
 	}, {
 		"name": "c1x",
 		"id": "c1x",
-		"bid": "/rtb/bids/c1x=com.xrtb.exchanges.C1X&usesPiggyBackWins"
+		"bid": "/rtb/bids/c1x=com.xrtb.exchanges.C1X"
 	}, {
 		"name": "axonix",
 		"id": "axonix-id",
